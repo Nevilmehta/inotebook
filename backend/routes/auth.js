@@ -53,9 +53,6 @@ router.post('/createuser',[
     }
 })
 
-
-
-
 //ROUTE 2: authentic a user using: POST "/api/auth/login". No login required
 router.post('/login',[
     body('email','Enter a valid email').isEmail(),
@@ -70,14 +67,17 @@ router.post('/login',[
 
     const {email, password} = req.body;
     try {
+        let success = false;
         let user = await User.findOne({email});
         if(!user){
+            success= false;
             return res.status(400).json({error: "Please try to login with correct credentials"});
         }
 
         const passwordCompare = await bcrypt.compare(password, user.password);
         if(!passwordCompare){
-            return res.status(400).json({error: "Please try to login with correct credentials"});
+            success= false;
+            return res.status(400).json({success,error: "Please try to login with correct credentials"});
         }
 
         const payload ={
@@ -88,7 +88,8 @@ router.post('/login',[
 
         //JWT authentication
         const authtoken = jwt.sign(payload, JWT_SECRET)
-        res.json({authtoken})
+        success = true;
+        res.json({success, authtoken})
     } catch (error) {
         console.error(error.message);
         res.status(500).send("Internal Server error")
